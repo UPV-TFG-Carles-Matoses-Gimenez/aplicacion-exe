@@ -1,0 +1,423 @@
+# configuración OpenColorIO preparada
+# para trabajos CGI y VFX
+# Basado en configuraciones aces, nuke-default, blender y spi de OpenColorIO-Config
+# Sigue la convencion de nomenclatura de Blender para mayor compatibilidad
+
+# Desarrollado por Carles Matoses como experimento para un trabajo universitario
+# De la politéctnica de valencia.
+
+# USO EXPERIMENTAL
+
+
+ocio_profile_version: 2
+
+search_path: "luts:filmic:ACES:AgX"
+strictparsing: true
+luma: [0.2126, 0.7152, 0.0722]
+
+description: Experimento de renderizado customizado
+
+roles:
+  reference: Linear REC2020
+  scene_linear: Linear REC2020
+  rendering: Linear REC2020
+  default_byte: sRGB
+  default_float: Linear
+  default_sequencer: sRGB
+  color_picking: sRGB
+  data: Non-Color
+  aces_interchange: Linear ACES
+  color_timing: Filmic Log
+  compositing_log: Filmic Log
+  default: Linear
+  matte_paint: Linear
+  texture_paint: Linear
+
+
+
+displays:
+  sRGB:
+    - !<View> {name: sRGB, colorspace: sRGB}
+    - !<View> {name: ACES sRGB, colorspace: Output - sRGB}
+
+    - !<View> {name: Filmic, colorspace: Filmic}
+    - !<View> {name: Filmic Log, colorspace: Filmic Log}
+    - !<View> {name: Filmic Very High Contrast, colorspace: Filmic, look: Very High Contrast}
+    - !<View> {name: Filmic High Contrast, colorspace: Filmic, look: High Contrast}
+    - !<View> {name: Filmic Medium High Contrast, colorspace: Filmic, look: Medium High Contrast}
+    - !<View> {name: Filmic Medium Contrast, colorspace: Filmic, look: Medium Contrast}
+    - !<View> {name: Filmic Medium Low Contrast, colorspace: Filmic, look: Medium Low Contrast}
+    - !<View> {name: Filmic Low Contrast, colorspace: Filmic, look: Low Contrast}
+    - !<View> {name: Filmic Very Low Contrast, colorspace: Filmic, look: Very Low Contrast}
+    
+    - !<View> {name: AgX Base, colorspace: AgX Base}
+    - !<View> {name: Open DRT, colorspace: OpenDRT to sRGB}
+  XYZ:
+    - !<View> {name: XYZ, colorspace: XYZ}
+    - !<View> {name: Raw, colorspace: Non-Color}
+  Utilityes:
+    - !<View> {name: Raw, colorspace: Non-Color}
+    - !<View> {name: False Color, colorspace: False Color}
+
+
+    
+
+# active_displays: [sRGB, XYZ, Utilityes]
+active_views: [sRGB, ACES sRGB, Filmic Log, Filmic, AgX Base, Open DRT, XYZ, Raw, False Color]
+
+
+
+colorspaces:
+
+  ##### LINEAR #####
+
+  - !<ColorSpace>
+    name: Linear REC2020
+    family: REC2020
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      REC2020 Primaries for rendering and operating
+    isdata: false
+    to_reference:   !<MatrixTransform> {matrix: [0.636958048301, 0.144616903586, 0.168880975164, 0, 0.262700212011, 0.677998071519, 0.05930171647, 0, 0., 0.028072693049, 1.060985057711, 0, 0, 0, 0, 1]}
+    from_reference: !<MatrixTransform> {matrix: [1.716651187971, -0.355670783776, -0.253366281374, 0, -0.666684351832, 1.616481236635, 0.015768545814, 0, 0.017639857445, -0.042770613258, 0.942103121235, 0, 0, 0, 0, 1]}
+
+  - !<ColorSpace>
+    name: Linear
+    family: sRGB
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      sRGB Linear
+    isdata: false
+    to_reference:   !<MatrixTransform> {matrix: [ 0.41239079926595934, 0.35758433938387796, 0.1804807884018343, 0, 0.2126390058715103, 0.7151686787677559, 0.07219231536073371, 0, 0.019330818715591825, 0.11919477979462595, 0.9505321522496606, 0, 0, 0, 0, 1 ]}
+    from_reference: !<MatrixTransform> {matrix: [ 3.2409699419045226, -1.537383177570094, -0.49861076029300344, 0, -0.9692436362808798, 1.8759675015077206, 0.04155505740717563, 0, 0.05563007969699364, -0.20397695888897655, 1.0569715142428786, 0, 0, 0, 0, 1 ]}
+
+  - !<ColorSpace>
+    name: sRGB
+    family: sRGB
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      sRGB display space with sRGB OETF
+    isdata: false
+    from_reference: !<GroupTransform>
+        children:
+            - !<MatrixTransform> {matrix: [ 3.2409699419045226, -1.537383177570094, -0.49861076029300344, 0, -0.9692436362808798, 1.8759675015077206, 0.04155505740717563, 0, 0.05563007969699364, -0.20397695888897655, 1.0569715142428786, 0, 0, 0, 0, 1 ]}
+            - !<FileTransform> {src: srgb_inv.spi1d, interpolation: linear}
+    to_reference: !<GroupTransform>
+        children:
+            - !<FileTransform> {src: srgb.spi1d, interpolation: linear}
+            - !<MatrixTransform> {matrix: [ 0.41239079926595934, 0.35758433938387796, 0.1804807884018343, 0, 0.2126390058715103, 0.7151686787677559, 0.07219231536073371, 0, 0.019330818715591825, 0.11919477979462595, 0.9505321522496606, 0, 0, 0, 0, 1 ]}
+
+
+  # FILMIC BLENDER
+
+  - !<ColorSpace>
+    name: Filmic allocation
+    family: log
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      sRGB Log based filmic shaper with 16.5 stops of latitude, and 25 stops of dynamic range
+    isdata: false
+    from_reference: !<GroupTransform>
+        children:
+            - !<MatrixTransform> {matrix: [ 3.2409699419045226, -1.537383177570094, -0.49861076029300344, 0, -0.9692436362808798, 1.8759675015077206, 0.04155505740717563, 0, 0.05563007969699364, -0.20397695888897655, 1.0569715142428786, 0, 0, 0, 0, 1 ]}
+            - !<AllocationTransform> {allocation: lg2, vars: [-12.473931188, 12.526068812]}
+ 
+
+  - !<ColorSpace>
+    name: Filmic desat
+    family: log
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      sRGB Log based filmic shaper with 16.5 stops of latitude, and 25 stops of dynamic range
+    isdata: false
+    from_reference: !<GroupTransform>
+        children:
+            - !<MatrixTransform> {matrix: [ 3.2409699419045226, -1.537383177570094, -0.49861076029300344, 0, -0.9692436362808798, 1.8759675015077206, 0.04155505740717563, 0, 0.05563007969699364, -0.20397695888897655, 1.0569715142428786, 0, 0, 0, 0, 1 ]}
+            - !<AllocationTransform> {allocation: lg2, vars: [-12.473931188, 12.526068812]}
+            - !<FileTransform> {src: filmic_desat65cube.spi3d, interpolation: best}
+
+
+  - !<ColorSpace>
+    name: Filmic Log
+    family: log
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      sRGB Log based filmic shaper with 16.5 stops of latitude, and 25 stops of dynamic range
+    isdata: false
+    from_reference: !<GroupTransform>
+        children:
+            - !<ColorSpaceTransform> {src: XYZ, dst: Linear}            
+            - !<AllocationTransform> {allocation: lg2, vars: [-12.473931188, 12.526068812]}
+            - !<FileTransform> {src: filmic_desat65cube.spi3d, interpolation: best}
+            - !<AllocationTransform> {allocation: uniform, vars: [0, 0.66]}
+    to_reference: !<GroupTransform>
+        children:
+            - !<AllocationTransform> {allocation: lg2, vars: [-12.473931188, 4.026068812], direction: inverse}
+            - !<MatrixTransform> {matrix: [ 0.41239079926595934, 0.35758433938387796, 0.1804807884018343, 0, 0.2126390058715103, 0.7151686787677559, 0.07219231536073371, 0, 0.019330818715591825, 0.11919477979462595, 0.9505321522496606, 0, 0, 0, 0, 1 ]}
+
+
+  - !<ColorSpace>
+    name: Filmic 
+    family:
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      sRGB display space with Filmic view transform on neutral Contrast
+    isdata: false
+    from_reference: !<GroupTransform>
+        children:
+            - !<ColorSpaceTransform> {src: XYZ, dst: Filmic Log}
+            - !<FileTransform> {src: filmic_to_0-70_1-03.spi1d, interpolation: linear}
+
+  - !<ColorSpace>
+    name: OpenDRT to sRGB
+    family:
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      Neutral filmic curve
+    isdata: false
+    from_reference: !<GroupTransform>
+        children:
+            - !<ColorSpaceTransform> {src: XYZ, dst: Linear REC2020}            
+            - !<AllocationTransform> {allocation: lg2, vars: [-12.473931188, 12.539267881710824]}
+            - !<FileTransform> {src: OpenDRT.spi3d, interpolation: best}
+            - !<ColorSpaceTransform> {src: Linear REC2020, dst: sRGB}       
+  
+
+
+  ##### ACES #####
+
+  - !<ColorSpace>
+    name: ACES - ACES2065-1
+    family: ACES
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      The Academy Color Encoding System reference color space
+    isdata: false
+    allocation: lg2
+    allocationvars: [-8, 5, 0.00390625]
+    from_reference: !<MatrixTransform> {matrix: [1.0498110175, 0.0000000000, -0.0000974845, 0, -0.4959030231, 1.3733130458, 0.0982400361, 0, 0, 0, 0.9912520182, 0, 0, 0, 0, 1]}
+
+
+  - !<ColorSpace>
+    name: ACES - ACEScg
+    family:
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      ACEScg transform 
+    isdata: false
+    to_reference: !<GroupTransform>
+        children:
+          - !<MatrixTransform> {matrix: [0.6954522414, 0.1406786965, 0.1638690622, 0, 0.0447945634, 0.8596711185, 0.0955343182, 0, -0.0055258826, 0.0040252103, 1.0015006723, 0, 0, 0, 0, 1]}
+          - !<MatrixTransform> {matrix: [0.9525523959, 0.0000000000, 0.0000936786, 0, 0.3439664498, 0.7281660966, -0.0721325464, 0, 0.0000000000, 0.0000000000, 1.0088251844, 0, 0, 0, 0, 1]}
+  
+  - !<ColorSpace>
+    name: Output - sRGB
+    family: Output
+    equalitygroup: ""
+    bitdepth: 32f
+    description: |
+      ACES 1.0 Output - sRGB Output Transform
+      
+      ACES Transform ID : urn:ampas:aces:transformId:v1.5:ODT.Academy.RGBmonitor_100nits_dim.a1.0.3
+    isdata: false
+    allocation: uniform
+    allocationvars: [0, 1]
+    to_reference: !<GroupTransform>
+      children:
+        - !<FileTransform> {src: InvRRT.sRGB.Log2_48_nits_Shaper.spi3d, interpolation: tetrahedral}
+        - !<FileTransform> {src: Log2_48_nits_Shaper_to_linear.spi1d, interpolation: linear}
+        - !<MatrixTransform> {matrix: [1.0498110175, 0.0000000000, -0.0000974845, 0, -0.4959030231, 1.3733130458, 0.0982400361, 0, 0, 0, 0.9912520182, 0, 0, 0, 0, 1]}
+
+    from_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: XYZ, dst: ACES - ACES2065-1}
+        - !<FileTransform> {src: Log2_48_nits_Shaper_to_linear.spi1d, interpolation: linear, direction: inverse}
+        - !<FileTransform> {src: Log2_48_nits_Shaper.RRT.sRGB.spi3d, interpolation: tetrahedral}
+        
+
+
+  
+  ##### AgX #####
+
+  - !<ColorSpace>
+    name: AgX Log
+    family: display
+    categories: [Log]
+    bitdepth: unknown
+    description: AgX Log, (Kraken)
+    isdata: false
+    allocation: uniform
+    from_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: XYZ, dst: Linear}
+        - !<RangeTransform> {min_in_value: 0, min_out_value: 0}
+        - !<MatrixTransform> {matrix: [0.842479062253094, 0.0784335999999992, 0.0792237451477643, 0, 0.0423282422610123, 0.878468636469772, 0.0791661274605434, 0, 0.0423756549057051, 0.0784336, 0.879142973793104, 0, 0, 0, 0, 1]}
+        - !<AllocationTransform> {allocation: lg2, vars: [-12.47393, 4.026069]}
+
+  - !<ColorSpace>
+    name: AgX Base
+    family: display
+    bitdepth: unknown
+    description: AgX Base Image Encoding
+    isdata: false
+    allocation: uniform
+    from_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: XYZ, dst: AgX Log}
+        - !<FileTransform> {src: AgX_Default_Contrast.spi1d}
+
+  
+  - !<ColorSpace>
+    name: AgX Golden look
+    aliases: [Appearance Golden sRGB]
+    family: Appearances/Golden
+    equalitygroup: ""
+    bitdepth: unknown
+    description: A golden tinted, slightly washed look for sRGB displays
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<LookTransform> {src: XYZ, dst: AgX Base, looks: Golden}
+  
+  - !<ColorSpace>
+    name: AgX Punchy look
+    aliases: [Appearance Punchy sRGB]
+    family: Appearances/Punchy
+    equalitygroup: ""
+    bitdepth: unknown
+    description: A punchy and more chroma laden look for sRGB displays
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<LookTransform> {src: XYZ, dst: AgX Base, looks: Punchy}
+
+
+
+  ##### UTILITY #####
+
+  - !<ColorSpace>
+    name: False Color
+    family: Utility
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      Filmic false color view transform
+    isdata: false
+    from_reference: !<GroupTransform>
+        children:
+            - !<ColorSpaceTransform> {src: XYZ, dst: Filmic Log}
+            - !<MatrixTransform> {matrix: [0.2126729, 0.7151521, 0.0721750, 0, 0.2126729, 0.7151521, 0.0721750, 0, 0.2126729, 0.7151521, 0.0721750, 0, 0, 0, 0, 1]}
+            - !<FileTransform> {src: filmic_false_color.spi3d, interpolation: best}
+
+  - !<ColorSpace>
+    name: lg10
+    family: Utility
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      lg10 curve
+    isdata: false
+    from_reference: !<GroupTransform>
+        children:
+            - !<FileTransform> {src: lg10.spi1d, interpolation: linear}
+
+
+  - !<ColorSpace>
+    name: Non-Color
+    family: Utility
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      Raw Input Values
+    isdata: true
+
+  - !<ColorSpace>
+    name: XYZ
+    family: Utility
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      XYZ Input Values
+    isdata: false
+
+
+looks:
+  # AgX
+  - !<Look>
+    name: Golden
+    process_space: AgX Base
+    description: A golden tinted, slightly washed look
+    transform: !<CDLTransform> {slope: [1, 0.9, 0.5], power: [0.8, 0.8, 0.8], sat: 1.3}
+
+  - !<Look>
+    name: Punchy
+    process_space: AgX Base
+    description: A punchy and more chroma laden look
+    transform: !<CDLTransform> {power: [1.35, 1.35, 1.35], sat: 1.4}
+
+  # FILMIC BLENDER
+  - !<Look>
+    name: _________________
+    process_space: Linear
+
+  - !<Look>
+    name: Very High Contrast
+    process_space: Filmic Log
+    transform: !<GroupTransform>
+        children:
+            - !<FileTransform> {src: filmic_to_1.20_1-00.spi1d, interpolation: linear}
+            - !<FileTransform> {src: filmic_to_0-70_1-03.spi1d, interpolation: linear, direction: inverse}
+
+  - !<Look>
+    name: High Contrast
+    process_space: Filmic Log
+    transform: !<GroupTransform>
+        children:
+            - !<FileTransform> {src: filmic_to_0.99_1-0075.spi1d, interpolation: linear}
+            - !<FileTransform> {src: filmic_to_0-70_1-03.spi1d, interpolation: linear, direction: inverse}
+
+  - !<Look>
+    name: Medium High Contrast
+    process_space: Filmic Log
+    transform: !<GroupTransform>
+        children:
+            - !<FileTransform> {src: filmic_to_0-85_1-011.spi1d, interpolation: best}
+            - !<FileTransform> {src: filmic_to_0-70_1-03.spi1d, interpolation: linear, direction: inverse}
+
+  - !<Look>
+    name: Medium Contrast
+    process_space: Filmic Log
+    transform: !<GroupTransform>
+        children:
+
+  - !<Look>
+    name: Medium Low Contrast
+    process_space: Filmic Log
+    transform: !<GroupTransform>
+        children:
+            - !<FileTransform> {src: filmic_to_0-60_1-04.spi1d, interpolation: linear}
+            - !<FileTransform> {src: filmic_to_0-70_1-03.spi1d, interpolation: linear, direction: inverse}
+
+  - !<Look>
+    name: Low Contrast
+    process_space: Filmic Log
+    transform: !<GroupTransform>
+        children:
+            - !<FileTransform> {src: filmic_to_0-48_1-09.spi1d, interpolation: linear}
+            - !<FileTransform> {src: filmic_to_0-70_1-03.spi1d, interpolation: linear, direction: inverse}
+
+  - !<Look>
+    name: Very Low Contrast
+    process_space: Filmic Log
+    transform: !<GroupTransform>
+        children:
+            - !<FileTransform> {src: filmic_to_0-35_1-30.spi1d, interpolation: linear}
+            - !<FileTransform> {src: filmic_to_0-70_1-03.spi1d, interpolation: linear, direction: inverse}
