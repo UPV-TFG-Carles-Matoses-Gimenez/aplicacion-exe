@@ -58,12 +58,12 @@ displays:
   Utilityes:
     - !<View> {name: Raw, colorspace: Non-Color}
     - !<View> {name: False Color, colorspace: False Color}
-
+    - !<View> {name: Gray, colorspace: Gray_stdr}
 
     
 
 # active_displays: [sRGB, XYZ, Utilityes]
-active_views: [sRGB, ACES sRGB, Filmic Log, Filmic, AgX Base, Open DRT, XYZ, Raw, False Color]
+active_views: [sRGB, ACES sRGB, Filmic Log, Filmic, AgX Base, Open DRT, XYZ, Raw, False Color, Gray]
 
 
 
@@ -82,6 +82,7 @@ colorspaces:
     to_reference:   !<MatrixTransform> {matrix: [0.636958048301, 0.144616903586, 0.168880975164, 0, 0.262700212011, 0.677998071519, 0.05930171647, 0, 0., 0.028072693049, 1.060985057711, 0, 0, 0, 0, 1]}
     from_reference: !<MatrixTransform> {matrix: [1.716651187971, -0.355670783776, -0.253366281374, 0, -0.666684351832, 1.616481236635, 0.015768545814, 0, 0.017639857445, -0.042770613258, 0.942103121235, 0, 0, 0, 0, 1]}
 
+
   - !<ColorSpace>
     name: Linear
     family: sRGB
@@ -92,6 +93,7 @@ colorspaces:
     isdata: false
     to_reference:   !<MatrixTransform> {matrix: [ 0.41239079926595934, 0.35758433938387796, 0.1804807884018343, 0, 0.2126390058715103, 0.7151686787677559, 0.07219231536073371, 0, 0.019330818715591825, 0.11919477979462595, 0.9505321522496606, 0, 0, 0, 0, 1 ]}
     from_reference: !<MatrixTransform> {matrix: [ 3.2409699419045226, -1.537383177570094, -0.49861076029300344, 0, -0.9692436362808798, 1.8759675015077206, 0.04155505740717563, 0, 0.05563007969699364, -0.20397695888897655, 1.0569715142428786, 0, 0, 0, 0, 1 ]}
+
 
   - !<ColorSpace>
     name: sRGB
@@ -175,6 +177,7 @@ colorspaces:
             - !<ColorSpaceTransform> {src: XYZ, dst: Filmic Log}
             - !<FileTransform> {src: filmic_to_0-70_1-03.spi1d, interpolation: linear}
 
+
   - !<ColorSpace>
     name: OpenDRT to sRGB
     family:
@@ -191,6 +194,21 @@ colorspaces:
             - !<ColorSpaceTransform> {src: Linear REC2020, dst: sRGB}       
   
 
+  - !<ColorSpace>
+    name: OpenDRT REC2020 Linear
+    family:
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      Neutral filmic curve
+    isdata: false
+    from_reference: !<GroupTransform>
+        children:
+            - !<ColorSpaceTransform> {src: XYZ, dst: Linear REC2020}            
+            - !<AllocationTransform> {allocation: lg2, vars: [-12.473931188, 12.539267881710824]}
+            - !<FileTransform> {src: OpenDRT.spi3d, interpolation: best}
+             
+  
 
   ##### ACES #####
 
@@ -220,6 +238,7 @@ colorspaces:
           - !<MatrixTransform> {matrix: [0.6954522414, 0.1406786965, 0.1638690622, 0, 0.0447945634, 0.8596711185, 0.0955343182, 0, -0.0055258826, 0.0040252103, 1.0015006723, 0, 0, 0, 0, 1]}
           - !<MatrixTransform> {matrix: [0.9525523959, 0.0000000000, 0.0000936786, 0, 0.3439664498, 0.7281660966, -0.0721325464, 0, 0.0000000000, 0.0000000000, 1.0088251844, 0, 0, 0, 0, 1]}
   
+
   - !<ColorSpace>
     name: Output - sRGB
     family: Output
@@ -264,6 +283,7 @@ colorspaces:
         - !<MatrixTransform> {matrix: [0.842479062253094, 0.0784335999999992, 0.0792237451477643, 0, 0.0423282422610123, 0.878468636469772, 0.0791661274605434, 0, 0.0423756549057051, 0.0784336, 0.879142973793104, 0, 0, 0, 0, 1]}
         - !<AllocationTransform> {allocation: lg2, vars: [-12.47393, 4.026069]}
 
+
   - !<ColorSpace>
     name: AgX Base
     family: display
@@ -275,8 +295,8 @@ colorspaces:
       children:
         - !<ColorSpaceTransform> {src: XYZ, dst: AgX Log}
         - !<FileTransform> {src: AgX_Default_Contrast.spi1d}
-
   
+
   - !<ColorSpace>
     name: AgX Golden look
     aliases: [Appearance Golden sRGB]
@@ -288,6 +308,7 @@ colorspaces:
     allocation: uniform
     from_scene_reference: !<LookTransform> {src: XYZ, dst: AgX Base, looks: Golden}
   
+
   - !<ColorSpace>
     name: AgX Punchy look
     aliases: [Appearance Punchy sRGB]
@@ -317,6 +338,7 @@ colorspaces:
             - !<MatrixTransform> {matrix: [0.2126729, 0.7151521, 0.0721750, 0, 0.2126729, 0.7151521, 0.0721750, 0, 0.2126729, 0.7151521, 0.0721750, 0, 0, 0, 0, 1]}
             - !<FileTransform> {src: filmic_false_color.spi3d, interpolation: best}
 
+
   - !<ColorSpace>
     name: lg10
     family: Utility
@@ -339,6 +361,7 @@ colorspaces:
       Raw Input Values
     isdata: true
 
+
   - !<ColorSpace>
     name: XYZ
     family: Utility
@@ -347,6 +370,21 @@ colorspaces:
     description: |
       XYZ Input Values
     isdata: false
+
+
+  - !<ColorSpace>
+    name: Gray_stdr
+    family: Utility
+    equalitygroup:
+    bitdepth: 32f
+    description: |
+      Basic gray look based on eye perception
+    isdata: false
+    from_reference: !<GroupTransform>
+        children:
+            - !<ColorSpaceTransform> {src: XYZ, dst: Filmic}
+            - !<FileTransform> {src: gray_stdr.spi3d, interpolation: best}
+
 
 
 looks:

@@ -57,7 +57,27 @@ class Divider(NodeV2):
     def recollect_inputs_frombackawrd_nodes(self):
         inp = super().recollect_inputs_frombackawrd_nodes()
         return inp
-    
+
+#####################################################
+#####################################################
+
+def inv_allocation(normalized_array, min_val=-12.473931188, max_val=12.539267881710824):
+    array_log2 = (normalized_array * (max_val - min_val)) + min_val
+    array = 2**array_log2
+    return array,
+
+class Inv_Allocation(NodeV2):
+    Title = "Inv_Allocation"
+    def __init__(self):
+        f = inv_allocation
+        inp_list = ["img"]
+        out_list = ["img"]
+        super().__init__(f, inp_list, out_list, self.Title)
+
+    def recollect_inputs_frombackawrd_nodes(self):
+        inp = super().recollect_inputs_frombackawrd_nodes()
+        return inp
+
 #####################################################
 #####################################################
 def math_node_divide(val1,val2,*argss):
@@ -109,7 +129,13 @@ from modules.interaction import register
 with dpg.menu(label=MATH, tag=MATH,parent=NODE_WINDOW_MENU):
     pass
 
-register_list = [Math_Node,Set_Val,Divider]
+register_list = [
+                 Math_Node,
+                 Set_Val,
+                 Divider,
+                 Inv_Allocation
+                 
+                 ]
 for node in register_list:
     register(node, MATH)
 ####

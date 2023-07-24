@@ -957,6 +957,27 @@ class openDRT(NodeV2):
 #####################################################
 #####################################################
 
+def export_lut3D(LUT, path, *args):
+    if args: args = args[0]
+    else: args = {}
+
+    print(LUT,path)
+    colour.write_LUT(colour.LUT3D(LUT), path)
+
+
+class Export_LUT(NodeV2):
+    Title = "Export LUT"
+    def __init__(self):
+        f = print
+        inp_list = {"LUT":{"none":{}},"path":{"text":{"width":220,"height":60}}}
+        out_list = []
+        super().__init__(f, inp_list, out_list, self.Title)
+
+        dpg.add_button(label="Export",
+                       parent=self.static,
+                       callback=lambda: export_lut3D(*self.recollect_inputs_frombackawrd_nodes())
+                       )
+
 
 #####################################################
 #####################################################
@@ -979,6 +1000,7 @@ register_list = [
     EOTF_RGB,
     Ocio_Management,
     openDRT,
+    Export_LUT,
     ]
 for node in register_list:
     register(node, COLOR_TRANSFORM)

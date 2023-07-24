@@ -73,7 +73,7 @@ class NodeV2:
         self.node_info()
 
 
-    def debug(self):
+    def debug(self,*args):
         print("\n")
         print(f"Node: {self.nodeID}")
         print(f"connections_forward {self.connections_forward}")
@@ -152,15 +152,20 @@ class NodeV2:
                             case "slider":
                                 dpg.add_slider_double(callback=self.node_modified,**_inp_dict_dict_val)
                             case "color":
-                                dpg.add_text(label="not implemented",**_inp_dict_dict_val)
+                                dpg.add_text(label="not implemented",callback=self.node_modified,**_inp_dict_dict_val)
                             case "value":
                                 dpg.add_input_double(callback=self.node_modified,**_inp_dict_dict_val)
                             case "float":
                                 dpg.add_input_double(callback=self.node_modified,**_inp_dict_dict_val)
                             case "integer":
                                 dpg.add_input_int(callback=self.node_modified,**_inp_dict_dict_val)
-
-
+                            case "text":
+                                dpg.add_input_text(callback=self.node_modified,**_inp_dict_dict_val)
+                            case "none":
+                                dpg.add_text()
+                            case "button":
+                                dpg.add_button(**_inp_dict_dict_val)
+                                
             self.inputs.append(inp)
 
 
@@ -228,7 +233,7 @@ class NodeV2:
         self.refresh() # actualiza los propios outputs
         print("Refreshing future nodes")
         self.refresh_forward_nodes() # actualizar nodos de la superlista
-    
+
     def refresh_forward_nodes(self):
         for i in self.get_all_forward_nodes():
             node_id = self.get_class_reference(i)
@@ -369,8 +374,11 @@ class NodeV2:
             # delete all conections
         self.remove_all_connections_forward() # delete item link and empty connections
         self.remove_all_connections_backward() # delete item link and empty connections
-
+ 
         dpg.delete_item(self.nodeID, children_only=True) # delete pins
+
+        # Delete Inspector
+        dpg.delete_item(self.window_info)
 
         self.instances.remove(self)
         dpg.delete_item(self.nodeID)
@@ -399,12 +407,12 @@ class NodeV2:
             with dpg.menu_bar(label="father menu"):
                 dpg.add_menu_item(label="X", user_data= self.window_info, callback=close_info)
             
-            
             # debugg info
             dpg.add_text(cabecera)
             with dpg.tree_node(label="Debug", default_open=False):
                 for i in self.debug():
                     dpg.add_text(self.split_string(i,50))
+                            
             self.custom_node_info()
             # Custom info ...
        
@@ -413,138 +421,3 @@ class NodeV2:
 
 
 print("Parent loaded!!")
-###################################################
-# ############### EXAMPLE##########################
-
-# class Node:
-#     instances = []
-#     def __init__(self):
-#         # Global properties
-#         self.__class__.instances.append(self)
-#         self.connections_forward = []
-#         self.connections_backward = []
-#         self.nodeID = None
-#         self.DICTIONARY = {}
-#         self.output_pin_list = []
-
-#     def spawn(self,structure):
-#         structure()
-
-#     def get_unic_class(self, id):
-#         """From pin to parent"""
-#         for instance in Node.instances:
-#             if instance.nodeID == dpg.get_item_parent(id):
-#                 return instance
-#         return
-    
-#     def split_string(self, long_string, chunk_size):
-#         chunks = [long_string[i:i+chunk_size] for i in range(0, len(long_string), chunk_size)]
-#         return "\n".join(chunks)
-    
-#     def refresh_connections_forward(self):
-#         # aplicar cambios en los inputs del hijo
-#         # for i in self.connections_forward: # ID de los pins
-#         #     _o = self.get_unic_class(i["output"])
-#             # dpg.set_item_user_data(i["input"], _o.refresh(i["output"]))   
-#         # resetear nodos futuros
-#         for i in self.connections_forward:
-#             i["instance"].refresh() # cambios dentro del nodo
-#             i["instance"]._refresh() # cambios fuera del nodo
-
-#     def refresh_connections_forward_on_intern_changes(self):
-#         """Esta funcion se activa cuando se producen cambios
-#         en este nodo y tenemos que actualizar hacia delante sin afectar al propio
-#         """
-#         print("refresh_connections_forward_on_intern_changes")
-#         # aplicar cambios en los inputs del hijo
-#         # for i in self.connections_forward: # ID de los pins
-#         #     _o = self.get_unic_class(i["output"])
-#             # dpg.set_item_user_data(i["input"], _o.refresh(i["output"]))   
-#         # resetear nodos futuros
-#         for i in self.connections_forward:
-#             i["instance"].refresh() # cambios dentro del nodo
-#             i["instance"]._refresh() # cambios fuera del nodo
-        
-
-#     def remove_all_connections_forward(self):
-#         for i in self.connections_forward:
-#             dpg.delete_item(i["linkID"]) 
-#             self.connections_forward = [] # Borrar todas las conexiones
-
-#     def remove_all_connections_backward(self):
-#         for i in self.connections_backward:
-#             dpg.delete_item(i["linkID"]) 
-#             self.connections_backward = [] # Borrar todas las conexiones
-
-#     def get_output_connected(self,inp_nodeID):
-#         """Return data from de output connected to this input"""
-#         for i in self.connections_backward:
-#             if i["input"] == inp_nodeID:
-#                 return dpg.get_item_user_data(i["output"])
-
-#     def _refresh(self):
-#         """
-#         REFRESCO HACIA DELANTE
-#         Si un padre se modifica.
-#         Si un valor del nodo se modifica. """
-#         print("father refresh (forward)")
-#         self.refresh_connections_forward()
-        
-#     def _disconect(self,conexion):
-#         """
-#         Si un nodo tiene una desconexión
-#             se refresca de nuevo
-#         conexion = {input, output, parent, link}
-#         """
-
-#         pass
-
-#     def _delete(self):
-
-#         # instancia de nodos anteriores y posteriores 
-#         for B in self.connections_backward:
-#             P = B["instance"]
-#             eliminar = {
-#                 "input":B["input"],
-#                 "output":B["output"],
-#                 "instance":self,
-#                 "linkID":B["linkID"]
-#                 }
-#             if eliminar in P.connections_forward:
-#                 print(f"el diccionario {eliminar}\nSe elimina de {P.connections_forward}")
-#                 P.connections_forward.remove(eliminar)
-
-#         for F in self.connections_forward:
-#             P = F["instance"]
-#             eliminar = {
-#                 "input":F["input"],
-#                 "output":F["output"],
-#                 "instance":self,
-#                 "linkID":F["linkID"]
-#                 }
-#             if eliminar in P.connections_backward:
-#                 print(f"el diccionario {eliminar}\nSe elimina de {P.connections_backward}")
-#                 P.connections_backward.remove(eliminar)
-
-            
-#             # Set actual conections to None
-#         childrens_list = dpg.get_item_children(self.nodeID) 
-#         print(f"childrens_list {childrens_list}")
-#         if 1 in childrens_list.keys():
-#             print("1 is in keys")
-#             for i in childrens_list[1]:
-#                 print(f"i to None {i}")
-#                 dpg.set_item_user_data(i,{})
-
-#             # Refresh nodes conected
-#         self.refresh_connections_forward()
-
-#             # delete all conections
-#         self.remove_all_connections_forward() # delete item link and empty connections
-#         self.remove_all_connections_backward() # delete item link and empty connections
-
-#         dpg.delete_item(self.nodeID, children_only=True) # delete pins
-
-
-#         self.instances.remove(self)
-#         dpg.delete_item(self.nodeID)

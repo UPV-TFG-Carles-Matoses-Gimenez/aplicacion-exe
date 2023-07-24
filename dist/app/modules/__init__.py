@@ -32,6 +32,7 @@ __all__ = [
     "operators",
     "plotters",
     "plantilla",
+    "color",
            ]
 
 

@@ -16,8 +16,6 @@ print("importing loadders module")
 
 #####################################################
 #####################################################
-
-from PIL import Image
 import pyroexr
 
 def open_exr_func(path):
@@ -142,7 +140,6 @@ class Load_Image(NodeV2):
 
 #####################################################
 #####################################################
-import rawpy
 
 def load_image_raw(path,*args):
     print("child refresh")
@@ -293,7 +290,7 @@ def QuadImageGenerator(color_space, length, gradient, cube_size, increment):
         img.append( np.array(list(zip(color,negro,color*decrementer[i]))).reshape(1,length,3)[0])
 
     img = np.array(img,dtype=np.float32)
-    processor = OCIO_CONFIG.getProcessor(color_space, OCIO.ROLE_DEFAULT)
+    processor = OCIO_CONFIG.getProcessor(color_space, OCIO.ROLE_SCENE_LINEAR)
     cpu = processor.getDefaultCPUProcessor()
     cpu.applyRGB(img)
 
@@ -341,6 +338,131 @@ class Quad_Image(NodeV2):
 
 #####################################################
 #####################################################
+from colour import LUT3D, LUT1D
+
+def find_rectangular_matrix_dimensions(n):
+    # Encuentra el valor entero más cercano a la raíz cuadrada de n
+    closest_sqrt = round(np.sqrt(n))
+    
+    # Si el valor es un número entero, esa será la dimensión de la matriz cuadrada
+    if closest_sqrt * closest_sqrt == n:
+        return closest_sqrt, closest_sqrt
+    
+    # Si el valor no es un número entero, encuentra el número de filas y columnas apropiadas
+    rows = np.ceil(np.sqrt(n))
+    cols = np.ceil(n / rows)
+    
+    return int(cols), int(rows), 
+    
+
+def create_image_from_cube(cube):
+    # Dims = XYZ, donde 
+    # X = width
+    # Y = height 
+    # Z = puntos
+
+    shape = cube.shape
+    new_dims = find_rectangular_matrix_dimensions(shape[2])
+
+    # Generamos imagen
+    new_matrix = np.zeros((shape[0]*new_dims[0],shape[1]*new_dims[1],3))
+
+    point = 0
+    for i in range(new_dims[0]):
+        for j in range(new_dims[1]):
+            point+=1
+            if point <= shape[2]:
+                x_range= i*shape[0], i*shape[0]+shape[0]
+                y_range= j*shape[1], j*shape[1]+shape[1]
+                new_matrix[ x_range[0]:x_range[1] , y_range[0]:y_range[1] ] = cube[:,:,point-1,:]
+    new_matrix = new_matrix[..., [1, 0, 2]]
+
+    return new_matrix
+
+
+def lut_generator(method, *args):
+    args = args[0]
+
+    LUT = LUT3D().linear_table(**args)
+    image = create_image_from_cube(LUT)
+    print(args)
+    return LUT, image
+
+class Spi3D(NodeV2):
+    Title = "LUT_Gen"
+    methods = {"LUT3D":LUT3D, "LUT1D":LUT1D}
+    def __init__(self):
+        f = lut_generator
+        inp_list = []
+        out_list = ["LUT3D","plot"]
+        super().__init__(f, inp_list, out_list, self.Title)
+
+        self.method = dpg.add_combo(
+            list(self.methods.keys()), 
+            label="method",
+            callback=lambda: self.custom_input(dpg.get_value(self.method),self.static,self.node_modified),
+            parent=self.static,
+            width=200,
+            default_value=list(self.methods.keys())[0])
+        self.val_id = []
+
+    def custom_input(self,str,parent_id,callback):
+        for i in self.val_id:
+            dpg.delete_item(i)
+        self.val_id = []
+
+        if str == "LUT3D":
+            self.val_id.append(dpg.add_input_int(label="size",width=120,parent=parent_id,callback=callback))
+        elif str == "LUT1D":
+            self.val_id.append(dpg.add_input_float(label="size",width=120,parent=parent_id,callback=callback))
+
+    def recollect_inputs_frombackawrd_nodes(self):
+        inp = super().recollect_inputs_frombackawrd_nodes()
+        inp.append(self.methods[dpg.get_value(self.method)])
+        dictionary = {}
+
+        for i in self.val_id:
+            key = dpg.get_item_label(i)
+            val = dpg.get_value(i)
+            dictionary[key] = val
+        inp.append(dictionary)
+        print(inp)
+        return inp
+
+    def custom_node_info(self):
+        super().custom_node_info()
+
+        help = """
+        LUT:
+            spi1D: Unidimensional (1D) LUT en formato ".spi1d".
+            spi3D: Tridimensional (3D) LUT en formato ".spi3d".
+            cube: LUT en formato ".cube".
+            3dl: LUT en formato ".3dl".
+            csp: LUT en formato ".csp".
+            mga: LUT en formato ".mga".
+            cube (variante de 1D): LUT en formato ".cube".
+            lut (LUT en formato de texto plano): LUT en formato ".lut".
+            mga (variante de 3D): LUT en formato ".mga".
+            spimtx: LUT en formato ".spimtx".
+            haldclut (Hald Color Lookup Table): LUT en formato ".png" o ".jpg" que representa una tabla de búsqueda de color en formato de cuadrícula.
+
+        Look:
+            clf: Look en formato ".clf" (Common LUT Format).
+            look: Look en formato ".look".
+            lookml: Look en formato ".lookml".
+            3dl (variante de 3D): Look en formato ".3dl".
+            lookml (variante de 3D): Look en formato ".lookml".
+            look (variante de 1D): Look en formato ".look".
+            mga (variante de Look): Look en formato ".mga".
+            csp (variante de Look): Look en formato ".csp".
+            look (variante de 3D): Look en formato ".look".
+        """
+        
+        print(self.methods)
+
+#####################################################
+#####################################################
+
 
 print("Succes!!: loaders module")
 
@@ -350,7 +472,7 @@ print("Succes!!: loaders module")
 with dpg.menu(label=LOADDERS, tag=LOADDERS,parent=NODE_WINDOW_MENU):
     pass
 
-register_list = [Load_Image,Load_Image_Raw,Quad_Image]
+register_list = [Load_Image,Load_Image_Raw,Quad_Image,Spi3D]
 for node in register_list:
     register(node, LOADDERS)
 

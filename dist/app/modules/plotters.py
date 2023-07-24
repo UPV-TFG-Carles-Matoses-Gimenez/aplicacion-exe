@@ -417,6 +417,7 @@ def chromaticity_diagram(img,color_profile,*args):
     img = img[:,:,:3]
     shape = img.shape
     img = img.reshape(shape[0]*shape[1],3)
+    print("EL TAMAÑO DE LA IMAGEN EN EL DIAGRAMA ES\n",img.shape)
     fig, ax = colour.plotting.plot_RGB_chromaticities_in_chromaticity_diagram_CIE1976UCS(
         img, 
         colourspace=color_profile,
@@ -439,7 +440,6 @@ class Chromaticity_Diagram(NodeV2):
         out_list = ["chromatic diagram"]
         super().__init__(f, inp_list, out_list, self.Title)
 
-        config = OCIO_CONFIG
         colorSpaceNames = sorted(colour.RGB_COLOURSPACES)
 
         self.colour_space_name = dpg.add_combo(
